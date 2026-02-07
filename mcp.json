@@ -1,0 +1,247 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/mcp-config.json",
+  "mcpServers": {
+    "tenx-mcp-sense": {
+      "type": "developer",
+      "description": "Black-box flight recorder for traceability and thinking logs (REQUIRED - always connected)",
+      "command": "npx",
+      "args": ["-y", "@tenxlabs/mcp-sense"],
+      "env": {
+        "MCP_SENSE_LOG_LEVEL": "INFO",
+        "MCP_SENSE_PROJECT": "project-chimera-factory"
+      },
+      "disabled": false,
+      "autoApprove": ["log_thinking", "query_history", "get_session_summary"],
+      "priority": "critical"
+    },
+    "git-mcp": {
+      "type": "developer",
+      "description": "Git version control operations for commit hygiene (min 2x/day commits)",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git"],
+      "env": {
+        "GIT_REPO_PATH": "."
+      },
+      "disabled": false,
+      "autoApprove": ["git_status", "git_log", "git_diff"],
+      "priority": "high"
+    },
+    "filesystem-mcp": {
+      "type": "developer",
+      "description": "File system operations for spec creation and repo management",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "disabled": false,
+      "autoApprove": ["read_file", "list_directory"],
+      "priority": "high"
+    },
+    "db-setup-mcp": {
+      "type": "developer",
+      "description": "Local database setup and migration testing (MongoDB + PostgreSQL)",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost:5432/chimera_dev"],
+      "env": {
+        "POSTGRES_USER": "chimera_dev",
+        "POSTGRES_DB": "chimera_dev"
+      },
+      "disabled": true,
+      "autoApprove": ["query", "list_tables"],
+      "priority": "medium",
+      "notes": "Enable when local DB is running. For development/testing only."
+    },
+    "trend-fetch-mcp": {
+      "type": "runtime",
+      "description": "Fetches real-time trends from social platforms (TikTok, YouTube, Instagram, X, MoltBook)",
+      "command": "uvx",
+      "args": ["chimera-trend-fetcher"],
+      "env": {
+        "TIKTOK_API_KEY": "${TIKTOK_API_KEY}",
+        "YOUTUBE_API_KEY": "${YOUTUBE_API_KEY}",
+        "INSTAGRAM_API_KEY": "${INSTAGRAM_API_KEY}",
+        "X_API_KEY": "${X_API_KEY}",
+        "RATE_LIMIT_PER_HOUR": "100"
+      },
+      "disabled": false,
+      "autoApprove": [],
+      "priority": "high",
+      "notes": "Used by skill_fetch_current_trends. API keys must be set in environment."
+    },
+    "publish-content-mcp": {
+      "type": "runtime",
+      "description": "Publishes content to social media platforms (requires Judge approval)",
+      "command": "uvx",
+      "args": ["chimera-content-publisher"],
+      "env": {
+        "TIKTOK_ACCESS_TOKEN": "${TIKTOK_ACCESS_TOKEN}",
+        "YOUTUBE_ACCESS_TOKEN": "${YOUTUBE_ACCESS_TOKEN}",
+        "INSTAGRAM_ACCESS_TOKEN": "${INSTAGRAM_ACCESS_TOKEN}",
+        "X_ACCESS_TOKEN": "${X_ACCESS_TOKEN}",
+        "RATE_LIMIT_PER_HOUR": "50"
+      },
+      "disabled": false,
+      "autoApprove": [],
+      "priority": "critical",
+      "notes": "Used by skill_publish_and_monitor. Requires Judge layer approval (confidence > 0.7)."
+    },
+    "engagement-poll-mcp": {
+      "type": "runtime",
+      "description": "Monitors engagement metrics (views, likes, comments, shares) from published content",
+      "command": "uvx",
+      "args": ["chimera-engagement-monitor"],
+      "env": {
+        "POLL_INTERVAL_MINUTES": "30",
+        "RATE_LIMIT_PER_HOUR": "100"
+      },
+      "disabled": false,
+      "autoApprove": ["get_engagement_metrics"],
+      "priority": "medium",
+      "notes": "Used by skill_publish_and_monitor. Polls every 30 minutes after publish."
+    },
+    "openclaw-status-mcp": {
+      "type": "runtime",
+      "description": "OpenClaw network integration for agent discovery, messaging, and collaboration",
+      "command": "uvx",
+      "args": ["chimera-openclaw-bridge"],
+      "env": {
+        "OPENCLAW_API_ENDPOINT": "https://api.openclaw.network/v1",
+        "OPENCLAW_API_KEY": "${OPENCLAW_API_KEY}",
+        "HEARTBEAT_INTERVAL_HOURS": "4",
+        "MOLTBOOK_ENABLED": "true"
+      },
+      "disabled": false,
+      "autoApprove": ["publish_heartbeat", "search_agents"],
+      "priority": "high",
+      "notes": "Used by skill_publish_openclaw_status and agent discovery. Heartbeat every 4 hours."
+    },
+    "wallet-transaction-mcp": {
+      "type": "runtime",
+      "description": "Coinbase AgentKit integration for crypto wallet operations and micro-transactions",
+      "command": "uvx",
+      "args": ["coinbase-agentkit-mcp"],
+      "env": {
+        "COINBASE_API_KEY": "${COINBASE_API_KEY}",
+        "COINBASE_API_SECRET": "${COINBASE_API_SECRET}",
+        "NETWORK": "base",
+        "MAX_TRANSACTION_ETH": "0.01",
+        "DAILY_LIMIT_ETH": "0.05"
+      },
+      "disabled": false,
+      "autoApprove": [],
+      "priority": "critical",
+      "notes": "Used by skill_handle_economic_transaction. Requires Judge approval (confidence > 0.9). Security limits enforced."
+    },
+    "moderation-mcp": {
+      "type": "runtime",
+      "description": "Content moderation and toxicity detection for safety guardrails",
+      "command": "uvx",
+      "args": ["chimera-content-moderator"],
+      "env": {
+        "MODERATION_API_KEY": "${MODERATION_API_KEY}",
+        "TOXICITY_THRESHOLD": "0.2",
+        "PII_DETECTION_ENABLED": "true"
+      },
+      "disabled": false,
+      "autoApprove": ["check_toxicity", "detect_pii"],
+      "priority": "critical",
+      "notes": "Used by Judge layer. Auto-approve if toxicity < 0.2, escalate if > 0.5."
+    },
+    "video-generation-mcp": {
+      "type": "runtime",
+      "description": "AI video generation and editing (stock footage, captions, brand watermarks)",
+      "command": "uvx",
+      "args": ["chimera-video-generator"],
+      "env": {
+        "VIDEO_API_KEY": "${VIDEO_API_KEY}",
+        "MAX_DURATION_SEC": "90",
+        "OUTPUT_RESOLUTION": "1080x1920",
+        "STORAGE_BACKEND": "s3"
+      },
+      "disabled": false,
+      "autoApprove": [],
+      "priority": "high",
+      "notes": "Used by skill_produce_short_video. Generates platform-native short-form content."
+    },
+    "storage-mcp": {
+      "type": "runtime",
+      "description": "Cloud storage for video assets, thumbnails, and metadata (S3/CDN)",
+      "command": "uvx",
+      "args": ["chimera-storage-bridge"],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "${AWS_ACCESS_KEY_ID}",
+        "AWS_SECRET_ACCESS_KEY": "${AWS_SECRET_ACCESS_KEY}",
+        "S3_BUCKET": "chimera-content",
+        "CDN_ENDPOINT": "https://cdn.chimera.example.com"
+      },
+      "disabled": false,
+      "autoApprove": ["upload_file", "get_file_url"],
+      "priority": "high",
+      "notes": "Used by skill_produce_short_video for asset storage and retrieval."
+    }
+  },
+  "globalSettings": {
+    "logLevel": "INFO",
+    "timeout": 30000,
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  },
+  "categories": {
+    "developer": {
+      "description": "MCP servers for human developer use during repository development",
+      "servers": ["tenx-mcp-sense", "git-mcp", "filesystem-mcp", "db-setup-mcp"],
+      "purpose": "Spec creation, git hygiene, traceability, local testing"
+    },
+    "runtime": {
+      "description": "MCP servers for autonomous agent runtime operations",
+      "servers": [
+        "trend-fetch-mcp",
+        "publish-content-mcp",
+        "engagement-poll-mcp",
+        "openclaw-status-mcp",
+        "wallet-transaction-mcp",
+        "moderation-mcp",
+        "video-generation-mcp",
+        "storage-mcp"
+      ],
+      "purpose": "External bridges for agent skills (trend discovery, publishing, economic transactions, OpenClaw)"
+    }
+  },
+  "security": {
+    "secretsManagement": "Environment variables (never hardcoded)",
+    "apiKeyRotation": "Every 90 days (automated via CI/CD)",
+    "rateLimits": {
+      "perAgent": "100 API calls/hour (trend + publish combined)",
+      "perMCPServer": "500 requests/hour global"
+    },
+    "authentication": {
+      "developer": "API key + HMAC signature",
+      "runtime": "API key + HMAC signature + Judge approval for critical ops"
+    }
+  },
+  "traceability": {
+    "mcpSenseRequired": true,
+    "logAllInvocations": true,
+    "retentionDays": 90,
+    "auditFields": ["timestamp", "agent_id", "action", "input_hash", "output_hash", "confidence"]
+  },
+  "notes": [
+    "This configuration separates Developer MCPs (for human engineering) from Runtime MCPs (for agent operations).",
+    "All runtime MCPs are bridges to external services and must be called via agent skills (defined in skills/README.md).",
+    "Critical operations (publish, wallet transactions) require Judge layer approval as defined in specs/security.md.",
+    "API keys must be set as environment variables - never commit secrets to git.",
+    "MCP Sense (tenx-mcp-sense) must remain connected at all times for traceability (challenge requirement).",
+    "Disabled servers (db-setup-mcp) can be enabled when local infrastructure is running.",
+    "All MCP servers follow the universal bridge pattern defined in specs/_meta.md section 4."
+  ],
+  "references": {
+    "specs": [
+      "specs/_meta.md (section 4: MCP as universal bridge)",
+      "specs/technical.md (section 4: MCP integration points)",
+      "specs/security.md (authentication, rate limits)",
+      "specs/openclaw_integration.md (OpenClaw MCP server)",
+      "research/tooling_strategy.md (Developer vs Runtime separation)"
+    ],
+    "skills": [
+      "skills/README.md (all skills define MCP dependencies)"
+    ]
+  }
+}
